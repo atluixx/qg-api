@@ -1,4 +1,5 @@
 import noblox from 'noblox.js';
+import getUserId from '../functions/get.user.id.js';
 
 const kickHandler = async (req, res, login, logged, group) => {
   console.log('[WARN] Método de uso: POST /kick [username|id]');
@@ -39,9 +40,14 @@ const kickHandler = async (req, res, login, logged, group) => {
       groupId = null;
     }
 
-    const userId = parseInt(user, 10);
+    let userId = Number(user);
 
-    if (!groupId || isNaN(userId)) {
+    if (isNaN(userId)) {
+      const result = await getUserId({ username: user });
+      userId = result?.user?.id;
+    }
+
+    if (!groupId) {
       return res.status(400).json({
         response: "Os parâmetros 'group' e 'user' devem ser números válidos!",
         status: false,
