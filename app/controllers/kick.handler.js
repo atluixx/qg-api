@@ -25,14 +25,23 @@ const kickHandler = async (req, res, login, logged, group) => {
       });
     }
 
-    let groupId = parseInt(group, 10);
-    const userId = parseInt(user, 10);
+    let groupId;
 
-    if (isNaN(groupId)) {
-      groupId = group.id;
+    if (!isNaN(parseInt(group, 10))) {
+      groupId = parseInt(group, 10);
+    } else if (
+      group &&
+      typeof group === 'object' &&
+      !isNaN(parseInt(group.id, 10))
+    ) {
+      groupId = parseInt(group.id, 10);
+    } else {
+      groupId = null;
     }
 
-    if (isNaN(groupId) || isNaN(userId)) {
+    const userId = parseInt(user, 10);
+
+    if (!groupId || isNaN(userId)) {
       return res.status(400).json({
         response: "Os parâmetros 'group' e 'user' devem ser números válidos!",
         status: false,
