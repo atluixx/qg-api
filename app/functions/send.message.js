@@ -1,8 +1,8 @@
-import axios from "axios";
-import "dotenv/config";
+import axios from 'axios';
+import 'dotenv/config';
 
 const API_KEY = process.env.CLOUD_API;
-const TOPIC = "PrintMessage";
+const TOPIC = 'PrintMessage';
 const universe = 8088082175;
 
 const sendMessage = async (message) => {
@@ -12,19 +12,19 @@ const sendMessage = async (message) => {
       { message },
       {
         headers: {
-          "x-api-key": API_KEY,
-          "Content-Type": "application/json",
+          'x-api-key': API_KEY,
+          'Content-Type': 'application/json',
         },
       }
     );
 
-    console.log("✅ Message sent:", response.status);
+    console.log('✅ Message sent:', response.status);
   } catch (error) {
     console.error(
-      "❌ Error sending message:",
+      '❌ Error sending message:',
       error.response?.data || error.message
     );
   }
 };
 
-await sendMessage("Hello!");
+await sendMessage('Hello!');
