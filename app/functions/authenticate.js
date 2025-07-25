@@ -1,10 +1,5 @@
-import noblox from "noblox.js";
-import "dotenv/config";
-
-/**
- * @type { user: import("noblox.js").AuthenticatedUserData }
- * @returns { Promise<Boolean> }
- */
+import noblox from 'noblox.js';
+import 'dotenv/config';
 
 const login = async () => {
   try {

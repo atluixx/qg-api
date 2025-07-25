@@ -1,10 +1,6 @@
 import noblox from 'noblox.js';
 import getUserId from '../functions/get.user.id.js';
 
-/**
- * Controlador para alterar o cargo de um usuário no grupo Roblox.
- * Espera receber no body: { user: string (username ou ID), role: string (nome ou rank) }
- */
 const roleController = async (req, res, login, logged, group) => {
   const { user, role } = req.body;
 
@@ -15,67 +11,73 @@ const roleController = async (req, res, login, logged, group) => {
 
   if (!user || !role) {
     return res.status(400).json({
-      error: "❌ Campos obrigatórios ausentes: 'user' e 'role'",
+      response: "❌ Campos obrigatórios ausentes: 'user' e 'role'",
+      status: false,
+      code: 400,
     });
   }
 
   try {
-    // Obtém dados do usuário
-    const userData = await getUserId({ username: user });
-
-    if (!userData || !userData.user || !userData.user.id) {
-      return res.status(404).json({
-        error: '❌ Usuário não encontrado no Roblox.',
-      });
+    // Obtém userId aceitando ID numérico direto ou username
+    let userId = Number(user);
+    if (isNaN(userId)) {
+      const userData = await getUserId({ username: user });
+      userId = userData?.user?.id;
+      if (!userId) {
+        return res.status(404).json({
+          response: '❌ Usuário não encontrado no Roblox.',
+          status: false,
+          code: 404,
+        });
+      }
     }
-
-    const userId = userData.user.id;
 
     // Pega os cargos disponíveis no grupo
     const roles = await noblox.getRoles(group.id);
     let rankToSet;
 
-    // Caso role seja um nome de cargo
     if (typeof role === 'string' && isNaN(role)) {
+      // role como nome do cargo
       const roleObj = roles.find(
         (r) => r.name.trim().toLowerCase() === role.trim().toLowerCase()
       );
       if (!roleObj) {
         return res.status(400).json({
-          error: `❌ Cargo '${role}' não encontrado no grupo.`,
+          response: `❌ Cargo '${role}' não encontrado no grupo.`,
+          status: false,
+          code: 400,
         });
       }
       rankToSet = roleObj.rank;
-    }
-
-    // Caso role seja um número (rank direto)
-    else if (!isNaN(role)) {
+    } else if (!isNaN(role)) {
+      // role como número rank direto
       rankToSet = Number(role);
-    }
-
-    // Formato inválido
-    else {
+    } else {
       return res.status(400).json({
-        error: '❌ Formato de cargo inválido. Use nome ou número.',
+        response: '❌ Formato de cargo inválido. Use nome ou número.',
+        status: false,
+        code: 400,
       });
     }
 
     // Faz a troca de cargo
     const result = await noblox.setRank(group.id, userId, rankToSet);
 
-    console.log(
-      `✅ Cargo de ${user} alterado com sucesso para rank ${rankToSet}`
-    );
+    console.log(`✅ Cargo de usuário ${user} alterado para rank ${rankToSet}`);
 
     return res.status(200).json({
-      message: `✅ Cargo de ${user} alterado para rank ${rankToSet}.`,
+      response: `✅ Cargo de usuário ${user} alterado para rank ${rankToSet}.`,
+      status: true,
+      code: 200,
       rank: rankToSet,
       result,
     });
   } catch (error) {
     console.error('❌ Erro ao mudar o cargo:', error);
     return res.status(500).json({
-      error: '❌ Erro ao mudar o cargo: ' + (error.message || error),
+      response: '❌ Erro ao mudar o cargo: ' + (error.message || error),
+      status: false,
+      code: 500,
     });
   }
 };

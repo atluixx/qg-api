@@ -1,15 +1,9 @@
-import handleRequest from '../functions/handle.group.request.js';
-import getUserId from '../functions/get.user.id.js';
-
-/**
- * Controlador para aceitar ou rejeitar pedido de entrada em grupo Roblox.
- * Recebe no body: { method: 'accept'|'reject', user: string (username ou ID) }
- */
 const requestController = async (req, res, login, logged, group) => {
   console.log('[⚠️] POST /requests - Iniciando processamento da solicitação.');
 
+  const { method, user } = req.body; // importante extrair do body logo
+
   try {
-    // Tenta autenticar se ainda não estiver logado
     if (!logged) {
       const success = await login();
       if (!success) {
@@ -40,11 +34,11 @@ const requestController = async (req, res, login, logged, group) => {
       });
     }
 
-    // Obtém userId (numérico ou via username)
-    let userId = parseInt(user, 10);
+    // Obtem userId, aceitando ID direto ou username via getUserId
+    let userId = Number(user);
     if (isNaN(userId)) {
-      const result = await getUserId({ username: user });
-      userId = result?.user?.id;
+      const userResult = await getUserId({ username: user });
+      userId = userResult?.user?.id;
 
       if (!userId) {
         return res.status(404).json({
@@ -55,7 +49,7 @@ const requestController = async (req, res, login, logged, group) => {
       }
     }
 
-    // Executa ação de aceitar ou rejeitar a solicitação
+    // Executa ação (accept/reject)
     const response = await handleRequest({
       group,
       id: userId,
@@ -80,7 +74,6 @@ const requestController = async (req, res, login, logged, group) => {
   } catch (error) {
     console.error('❌ Erro ao processar a solicitação:', error);
 
-    // Tratamento especial para erro CSRF token
     if (
       error?.response?.status === 403 &&
       error?.response?.data?.errors?.[0]?.message?.includes('x-csrf-token')
@@ -92,7 +85,6 @@ const requestController = async (req, res, login, logged, group) => {
       });
     }
 
-    // Erro genérico interno
     return res.status(500).json({
       response: '❌ Erro interno ao processar a solicitação.',
       status: false,

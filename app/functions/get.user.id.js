@@ -1,13 +1,8 @@
 import noblox from 'noblox.js';
 
-/**
- * Busca o ID e dados do usuário no Roblox.
- * @param {{ username: string }} param0
- * @returns {Promise<{ response: string, user: object|null, status: boolean, code?: number }>}
- */
 const getUserId = async ({ username }) => {
   try {
-    if (!username?.trim()) {
+    if (!username?.toString().trim()) {
       return {
         response: "O parâmetro 'username' é obrigatório!",
         status: false,
@@ -15,6 +10,19 @@ const getUserId = async ({ username }) => {
       };
     }
 
+    const maybeId = Number(username);
+    if (!isNaN(maybeId) && maybeId > 0) {
+      try {
+        const user = await noblox.getUserInfo(maybeId);
+        return {
+          response: `Usuário encontrado: ${user.name} (ID: ${user.id})`,
+          user,
+          status: true,
+        };
+      } catch {}
+    }
+
+    // Caso seja username, busca o id
     const userId = await noblox.getIdFromUsername(username);
     const user = await noblox.getUserInfo(userId);
 

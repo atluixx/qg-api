@@ -1,7 +1,7 @@
-import express from 'express';
 import noblox from 'noblox.js';
-import 'dotenv/config';
+import express from 'express';
 import cors from 'cors';
+import 'dotenv/config';
 
 import requestController from './app/controllers/group.requests.js';
 import kickHandler from './app/controllers/kick.handler.js';

@@ -1,10 +1,6 @@
 import noblox from 'noblox.js';
 import getUserId from '../functions/get.user.id.js';
 
-/**
- * Exila um usuário de um grupo Roblox.
- * Espera receber: { user: string (username ou ID) }
- */
 const kickHandler = async (req, res, login, logged, group) => {
   console.log('[⚠️] POST /kick - Iniciando exílio...');
 
@@ -21,7 +17,6 @@ const kickHandler = async (req, res, login, logged, group) => {
     }
 
     const { user } = req.body;
-
     if (!user) {
       return res.status(400).json({
         response: "❌ O campo 'user' é obrigatório.",
@@ -30,15 +25,8 @@ const kickHandler = async (req, res, login, logged, group) => {
       });
     }
 
-    // Determina o groupId
-    let groupId = null;
-    if (!isNaN(Number(group))) {
-      groupId = Number(group);
-    } else if (group && typeof group === 'object' && !isNaN(Number(group.id))) {
-      groupId = Number(group.id);
-    }
-
-    if (!groupId) {
+    const groupId = typeof group === 'number' ? group : group?.id;
+    if (!groupId || isNaN(Number(groupId))) {
       return res.status(400).json({
         response: "❌ Parâmetro 'group' inválido.",
         status: false,
@@ -46,7 +34,6 @@ const kickHandler = async (req, res, login, logged, group) => {
       });
     }
 
-    // Determina o userId
     let userId = Number(user);
     if (isNaN(userId)) {
       const result = await getUserId({ username: user });
@@ -61,7 +48,6 @@ const kickHandler = async (req, res, login, logged, group) => {
       });
     }
 
-    // Exila o usuário
     await noblox.exile(groupId, userId);
 
     console.log(`✅ Usuário ${userId} exilado do grupo ${groupId}.`);
@@ -73,7 +59,6 @@ const kickHandler = async (req, res, login, logged, group) => {
   } catch (error) {
     console.error('❌ Erro ao exilar usuário:', error);
 
-    // Erro de CSRF token
     if (
       error?.response?.status === 403 &&
       error?.response?.data?.errors?.[0]?.message?.includes('x-csrf-token')
