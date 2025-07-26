@@ -1,3 +1,5 @@
+import handleRequest from '../functions/handle.group.request.js';
+
 const requestController = async (req, res, login, logged, group) => {
   console.log('[⚠️] POST /requests - Iniciando processamento da solicitação.');
 
