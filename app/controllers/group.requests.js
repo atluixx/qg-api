@@ -1,22 +1,40 @@
 const requestController = async (req, res, login, logged, group) => {
   console.log('[⚠️] POST /requests - Iniciando processamento da solicitação.');
 
-  const { method, user } = req.body; // importante extrair do body logo
+  const { method, user } = req.body;
 
   try {
+    // Evita múltiplos logins concorrentes com flag simples
     if (!logged) {
-      const success = await login();
-      if (!success) {
-        return res.status(500).json({
-          response: '❌ Falha ao autenticar no Roblox.',
-          status: false,
-          code: 500,
+      if (requestController.isLoggingIn) {
+        // Espera até que o login atual termine (polling simples)
+        await new Promise((resolve) => {
+          const interval = setInterval(() => {
+            if (!requestController.isLoggingIn) {
+              clearInterval(interval);
+              resolve();
+            }
+          }, 100);
         });
+      } else {
+        requestController.isLoggingIn = true;
+        const success = await login();
+        requestController.isLoggingIn = false;
+
+        if (!success) {
+          return res.status(500).json({
+            response: '❌ Falha ao autenticar no Roblox.',
+            status: false,
+            code: 500,
+          });
+        }
       }
     }
 
-    // Valida o método aceito
-    const normalizedMethod = method?.toLowerCase();
+    // Validação de método (case insensitive)
+    const normalizedMethod =
+      typeof method === 'string' ? method.toLowerCase() : null;
+
     if (!normalizedMethod || !['accept', 'reject'].includes(normalizedMethod)) {
       return res.status(400).json({
         response: "❌ O parâmetro 'method' deve ser 'accept' ou 'reject'.",
@@ -26,20 +44,24 @@ const requestController = async (req, res, login, logged, group) => {
     }
 
     // Valida usuário
-    if (!user) {
+    if (!user || typeof user !== 'string') {
       return res.status(400).json({
-        response: "❌ O parâmetro 'user' deve ser fornecido.",
+        response: "❌ O parâmetro 'user' deve ser fornecido e ser uma string.",
         status: false,
         code: 400,
       });
     }
 
-    // Obtem userId, aceitando ID direto ou username via getUserId
-    let userId = Number(user);
-    if (isNaN(userId)) {
-      const userResult = await getUserId({ username: user });
-      userId = userResult?.user?.id;
+    // Trata userId com regex para evitar NaN inválido
+    let userId = null;
+    const userTrim = user.trim();
 
+    if (/^\d+$/.test(userTrim)) {
+      userId = Number(userTrim);
+    } else {
+      // Supõe username, tenta resolver via getUserId
+      const userResult = await getUserId({ username: userTrim });
+      userId = userResult?.user?.id ?? null;
       if (!userId) {
         return res.status(404).json({
           response: '❌ Usuário não encontrado.',
@@ -56,7 +78,7 @@ const requestController = async (req, res, login, logged, group) => {
       method: normalizedMethod,
     });
 
-    if (response?.status) {
+    if (response?.status === true) {
       return res.status(200).json({
         response: `✅ Usuário ${
           normalizedMethod === 'accept' ? 'aceito' : 'rejeitado'
@@ -64,11 +86,19 @@ const requestController = async (req, res, login, logged, group) => {
         status: true,
         code: 200,
       });
-    } else {
+    } else if (response?.status === false) {
       return res.status(404).json({
         response: '❌ Usuário não encontrado nas solicitações de entrada.',
         status: false,
         code: 404,
+      });
+    } else {
+      // Resposta inesperada
+      console.warn('⚠️ Resposta inesperada de handleRequest:', response);
+      return res.status(500).json({
+        response: '❌ Resposta inesperada da função handleRequest.',
+        status: false,
+        code: 500,
       });
     }
   } catch (error) {
@@ -92,5 +122,8 @@ const requestController = async (req, res, login, logged, group) => {
     });
   }
 };
+
+// Flag para controle de login concorrente
+requestController.isLoggingIn = false;
 
 export default requestController;

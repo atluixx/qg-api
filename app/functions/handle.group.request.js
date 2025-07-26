@@ -1,12 +1,12 @@
-import noblox from "noblox.js";
+import noblox from 'noblox.js';
 
 const handleUser = async ({ id, group, method }) => {
   const methodMap = {
-    aceitar: "accept",
-    accept: "accept",
-    rejeitar: "reject",
-    recusar: "reject",
-    reject: "reject",
+    aceitar: 'accept',
+    accept: 'accept',
+    rejeitar: 'reject',
+    recusar: 'reject',
+    reject: 'reject',
   };
 
   const action = methodMap[method?.toLowerCase()];
@@ -27,7 +27,7 @@ const handleUser = async ({ id, group, method }) => {
 
     if (!userInRequests) {
       return {
-        response: "Usuário não está na lista de pedidos.",
+        response: 'Usuário não está na lista de pedidos.',
         status: false,
         code: 404,
       };
@@ -37,7 +37,7 @@ const handleUser = async ({ id, group, method }) => {
     const user = await noblox.getPlayerInfo(id);
     return {
       response: `Usuário ${
-        action === "accept" ? "aceito" : "rejeitado"
+        action === 'accept' ? 'aceito' : 'rejeitado'
       } com sucesso.`,
       user,
       status: true,
@@ -45,7 +45,7 @@ const handleUser = async ({ id, group, method }) => {
     };
   } catch (error) {
     return {
-      response: "Erro ao processar o pedido: " + error.message,
+      response: 'Erro ao processar o pedido: ' + error.message,
       status: false,
       code: error.response?.status || 500,
     };

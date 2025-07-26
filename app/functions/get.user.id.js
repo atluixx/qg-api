@@ -19,10 +19,16 @@ const getUserId = async ({ username }) => {
           user,
           status: true,
         };
-      } catch {}
+      } catch (innerError) {
+        // Se não encontrar pelo ID, tenta seguir para username normalmente
+        console.warn(
+          `ID informado não válido como usuário: ${maybeId}`,
+          innerError
+        );
+      }
     }
 
-    // Caso seja username, busca o id
+    // Se não foi ID válido ou não encontrou pelo ID, tenta username
     const userId = await noblox.getIdFromUsername(username);
     const user = await noblox.getUserInfo(userId);
 
